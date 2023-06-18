@@ -91,8 +91,6 @@ WITH CTE AS (
         cust.customer_state,
         SUM(pay.payment_value) AS total_payment,
         (SUM(pay.payment_value) / (SELECT SUM(payment_value) FROM pay)) * 100 AS perc 
-        
-        -- This line computes after GROUP BY has been performed. So it basically says GROUP the cust table on 'customer_state', SUM payment_value based on the grouping, then take the SUMMED value divided by the total value of the 'payment_value' column.
     FROM
         cust
         JOIN orders
@@ -107,7 +105,7 @@ cumu AS (
         customer_state,
         total_payment,
         perc,
-        SUM(perc) OVER (ORDER BY total_payment DESC) AS cumulative_perc -- If we write this line in CTE, it will not recognise 'total_payment' because it is the same level, the alias has not been created yet. So we write it here in cumu
+        SUM(perc) OVER (ORDER BY total_payment DESC) AS cumulative_perc
     FROM CTE
 ) 
 SELECT
@@ -351,7 +349,7 @@ SELECT
     COUNT(*) AS total_count
 FROM CTE
 GROUP BY daytype;
--- Doens't seem like it
+-- No, weekend sales does not seem any higher on a per day basis.
 
 
 -- Identifying whether specific days has higher purchase than usual.
@@ -363,7 +361,7 @@ FROM (
     FROM orders
 ) AS CTE
 GROUP BY day
--- Not really either, but we can say that on Saturday and Sunday the orders are slighly lower than on weekdays.
+-- We can say that on Saturday and Sunday the orders are slighly lower than on weekdays, but none of the days shows higher than usual activities.
  */
 
 
@@ -384,7 +382,7 @@ SELECT
     COUNT(*) AS total_count
 FROM CTE
 GROUP BY quarter;
--- No, but we can definitely tell which month IS NOT online shopping season, that is during the holiday quarter Q4.
+-- There are no specific months with higher than usual shopping activities, but we can definitely tell which month IS NOT online shopping season, that is during the holiday quarter Q4.
 
 
 -- Identifying month by month shopping trend.
@@ -408,7 +406,7 @@ WITH CTE AS (
     SELECT
         payment_installments,
         COUNT(*) AS transaction_count,
-        (COUNT(*) * 100.0 / SUM(COUNT(*)) OVER()) AS perc -- if we move *100 to a position outside of the division operator, perc and cumu perc will result in zero. Because when the division takes place it results in a number lesser than 1, and will round to 0 because of integer dtype. 0 * 100 is 0
+        (COUNT(*) * 100.0 / SUM(COUNT(*)) OVER()) AS perc
     FROM pay
     GROUP BY 
         payment_installments
